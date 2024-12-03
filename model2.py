@@ -34,7 +34,7 @@ st.set_page_config(layout='wide')
 # Istok Web is often cited as being the closest Google Font equivalent to the standard 
 # NHS font Frutige
 with open("style.css") as css:
-    st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
+ st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
 
 ############ Title and introduction
 # title text
