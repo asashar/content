@@ -37,21 +37,5 @@ class g:
     number_of_runs = 5
 
 
-    # #number of clinics per week and capacity
-    # surg_clinic_per_week = 2
-    # surg_clinic_appts = 6
-
-    # #average waiting times for imaging and hand therapy
-    # imaging_wait = 14
-    # therapy_wait = 30
-
-    # #appointments per week for imaging and hand therapy
-    # imaging_weekly_appts = 2
-    # therapy_weekly_appts = 2
-
-    # #theatre lists and cases per list
-    # theatre_list_per_week = 2
-    # theatre_list_capacity = 5
-
     trauma_list_per_week = 2
     weekly_extra_patients = 0
