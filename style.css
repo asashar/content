@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Istok+Web:wght@200&display=swap');
+
+html, body, st-emotion-cache [class*="css"] {
+    font-family: 'Istok Web', sans-serif;
+    font-size: 18px;
+    font-weight: 200;
+    color: #091747;
+}
+
+h1, h2, h3, h4, p {
+    font-family: "Istok Web", sans-serif;
+}
