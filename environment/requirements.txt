@@ -3,5 +3,5 @@ pyttsx3
 numpy
 pandas
 matplotlib
-streamlit as st
+streamlit
 plotly
