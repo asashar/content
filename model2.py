@@ -144,8 +144,8 @@ with tab1:
 
         # For the number of runs specified in the g class, create an instance of the
         # ED_Model class, and call its run method
-            for run in range(g.number_of_runs):
-                print (f"Run {run+1} of {g.number_of_runs}")
+            for run in range(NUM_OF_RUNS):
+                print (f"Run {run+1} of {NUM_OF_RUNS}")
                 demo_pathway_model = Neurosurgery_Pathway(run,
                                                       referrals_per_week=REFS_PER_WEEK,
                                                       surg_clinic_attendances=ATTENDANCES_PER_WEEK,
