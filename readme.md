@@ -7,18 +7,18 @@ the end of the Neurosurgery RTT pathay.
 
 There are various python files that are used to create the model.
 
--global_params.py: this sets the global parameters for the project.
+- global_params.py: this sets the global parameters for the project.
 
--SurgeryPatient.py: this is the patient class.
+- SurgeryPatient.py: this is the patient class.
 
--SurgeryPathway.py: this is the 'Pathway' class, setting up the environment,
-setting up values, resources, methods to determine parts of the pathway, 
+- SurgeryPathway.py: this is the 'Pathway' class, setting up the environment,
+setting up values, resources, methods to determine parts of the pathway,
 the method to generate referral etc.
 
--SurgeryResultsCalculator.py: creates the class Trial_Results_Calculator, which
+- SurgeryResultsCalculator.py: creates the class Trial_Results_Calculator, which
 tries to capture the waiting times for each project during the project.
 
--model2.py: this is the model for the project, and includes the Streamlit
+- model2.py: this is the model for the project, and includes the Streamlit
 commands to create the app.
 
 This produces various csv files that record thewaiting times.
