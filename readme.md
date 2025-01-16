@@ -28,4 +28,6 @@ For Streamlit, a config.toml file is saved in the .streamlit folder. This is
 the theme for the streamlit app.
 
 The cascading style sheet (css) specifies the font for the streamlit app.
-It uses the font "Istok Web" which is closet to Google fonts.
+It uses the font "Istok Web" which is the closest freely-available web font to the NHS Font Frutiger.
+
+To run the streamlit app, make sure you are in the main folder, then run the command `streamlit run model2.py`
