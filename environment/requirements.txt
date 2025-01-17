@@ -6,3 +6,4 @@ matplotlib
 streamlit
 plotly
 statsmodels
+ipykernel
