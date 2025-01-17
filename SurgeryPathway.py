@@ -573,6 +573,10 @@ class Neurosurgery_Pathway:
         """
         with open('queue_numbers.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
+            writer.writerow([self.run_number,
+                             self.clinic_queue_length,
+                             self.theatre_queue_length])
+
     def write_event_log(self):
         """
         A method to write the full event log
