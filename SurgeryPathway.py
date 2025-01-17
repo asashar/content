@@ -86,6 +86,7 @@ class Neurosurgery_Pathway:
 
         #setup values from defaults and calculate
         self.referrals_per_week = referrals_per_week
+        # Calculate the average inter-arrival time between referrals
         self.referral_interval = 7 / referrals_per_week
         
         self.surg_clinic_attendances = surg_clinic_attendances
@@ -110,6 +111,8 @@ class Neurosurgery_Pathway:
         self.theatre_case_duration = 1 / self.adjusted_theatre_capacity
         self.theatre_list_interval = 7 / theatre_list_per_week
 
+        # The probability that a patient, after going to the clinic, will progress to the
+        # step of having surgery
         self.prob_needs_surgery = prob_needs_surgery
 
         self.sim_duration = sim_duration
@@ -123,6 +126,11 @@ class Neurosurgery_Pathway:
         self.end_of_sim = self.env.event()
 
         #setup resources
+
+        # Set up a PriorityResource with a capacity of 1.
+        # NOTE: At present their is no concept of priority within the clinic or theatre lists
+        # However, the use of PriorityResource is so that a 'blocking' process with a higher
+        # priority can come in to model the unavailability of the clinic and theatre
         self.surg_clinic = simpy.PriorityResource(self.env, capacity=1)
         self.theatres = simpy.PriorityResource(self.env, capacity=1)
 
@@ -173,11 +181,11 @@ class Neurosurgery_Pathway:
         # Fill non-admitted queue
         for i in range(self.fill_non_admitted_queue):
 
-            #increment patient counter by 1
+            # Increment patient counter by 1
             self.patient_counter += 1
             self.active_entities += 1
 
-            #create new patient
+            # Create new patient
             pt = Patient(self.patient_counter)
             pt.from_prefills = True
             self.event_log.append(
@@ -187,6 +195,12 @@ class Neurosurgery_Pathway:
                  'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
                  }
             )
+            # NOTE: the default value for new patients is that they have not
+            # already been seen by the clinic
+            # So these patients in the non-admitted queue have
+            # the sttribute *already_seen_clinic*=False
+
+            # Get simpy env to run enter_pathway method with this patient
             self.env.process(self.enter_pathway(pt))
 
             # need to have yield statement so code works - timeout for zero time
@@ -197,12 +211,16 @@ class Neurosurgery_Pathway:
         # Fill admitted queue
         for i in range(self.fill_admitted_queue):
 
-            # increment patient counter by 1
+            # Increment patient counter by 1
             self.patient_counter += 1
             self.active_entities += 1
 
-            # create new patient
+            # Create new patient
             pt = Patient(self.patient_counter)
+
+            # Note that unlike the patients in the 'non-admitted' queue,
+            # these patients have a value of 'already_seen_clinic' of true,
+            # so will begin at an earlier point in the pathway
             pt.already_seen_clinic = True
             pt.from_prefills = True
 
@@ -213,9 +231,11 @@ class Neurosurgery_Pathway:
                  'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
                  }
             )
+
+            # Get simpy env to run enter_pathway method with this patient
             self.env.process(self.enter_pathway(pt))
 
-            # need to have yield statement so code works - timeout for zero time
+            # Need to have yield statement so code works - timeout for zero time
             yield self.env.timeout(0)
 
     def generate_referrals(self):
@@ -229,19 +249,21 @@ class Neurosurgery_Pathway:
 
         #keep generating indefinitely (until simulation ends)
         while True:
-            
-            #increment patient counter by 1
+
+            # Increment patient counter by 1
             self.patient_counter += 1
-            
-            #create new patient
+
+            # Create a new patient, passing the counter to serve as the patient's ID
             pt = Patient(self.patient_counter)
             log.debug(f"Day {self.env.now:.3f}: Adding Patient {self.patient_counter} to the simulation")
 
             # Decide if the patient needs surgery
             self.determine_surgery(pt)
+            # Determine if the patient was generated before the end of the simulation or not
             self.determine_end_sim(pt)
 
-            #if before end sim, increment counter
+            # If before end sim, add to the count of active entities
+            # Note that the simulation will not terminate until active entities reaches 0!
             if pt.before_end_sim == True:
                 self.active_entities += 1
             self.event_log.append(
@@ -251,10 +273,12 @@ class Neurosurgery_Pathway:
                  'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
                  }
             )
+
+            # Get simpy env to run enter_pathway method with this patient
             self.env.process(self.enter_pathway(pt))
             #print(f'Patient {pt.id} has been generated and entered the clinic queue')
 
-            #randomly sample time to next referral
+            # Randomly sample time to next referral
             sampled_interref_time = random.expovariate(1.0/self.referral_interval)
             log.debug(f"Next patient arriving in {sampled_interref_time:.3f} weeks ({sampled_interref_time * 24 * 60:.2f} minutes)")
 
@@ -326,8 +350,8 @@ class Neurosurgery_Pathway:
                 )
                 # log.debug(f'Patient {patient.id} has left the clinic queue at {self.env.now:.3f}')
 
-        # enter queue for theatres
-        # record start of queue time and add to tracker
+        # Enter queue for theatres
+        # Record start of queue time and add to tracker
         start_q_theatres = self.env.now
         self.event_log.append(
                 {'patient': patient.id, 'event_type': 'queue',
@@ -339,7 +363,7 @@ class Neurosurgery_Pathway:
                  }
             )
 
-        # request theatres resource
+        # Request theatres resource
         with self.theatres.request() as req:
             yield req
             self.event_log.append(
@@ -351,16 +375,20 @@ class Neurosurgery_Pathway:
                     'surgery_required': patient.needs_surgery
                     }
                 )
+
+            # Record end of queue time and add to tracker
             end_q_theatres = self.env.now
             self.fill_admitted_queue -= 1
 
-            # record theatre queue time and overall queue time
+            # Record theatre queue time and overall queue time
+            # TODO: SR NOTE: For consistency with later results recording, should this also check
+            # whether the simulation duration has elapsed?
             if not patient.from_prefills:
                 patient.theatre_q_time = end_q_theatres - start_q_theatres
                 patient.overall_q_time = end_q_theatres - start_q_clinic
                 patient.time_entered_pathway = start_q_clinic
 
-            # freeze for theatre case duration
+            # Freeze for theatre case duration
             yield self.env.timeout(self.theatre_case_duration)
             self.event_log.append(
                     {'patient': patient.id, 'event_type': 'resource_use_end',
@@ -371,10 +399,20 @@ class Neurosurgery_Pathway:
                     'surgery_required': patient.needs_surgery
                     }
                 )
+
+            # Decrement counter if before end sim patient
+            # Note that the number of active entities are tracked to determine when the
+            # simulation should terminate. However, patients are only added to the count of
+            # active entities if they were a prefill or generated during the initial simulation
+            # runtime.
             if patient.before_end_sim == True:
                 self.active_entities -= 1
 
-        # add patient to queue times dataframe
+        # Add patient to queue times dataframe
+        # NOTE - only patients who were not prefills and who were not in the
+        # TODO - though it will make your dataframe bigger, you may wish at some point to switch
+        # to recording all patients in your dataframe, but add additional columns that log whether
+        # they were prefill patients
         if not patient.from_prefills and patient.before_end_sim == True:
             self.store_queue_times(patient)
 
@@ -400,11 +438,11 @@ class Neurosurgery_Pathway:
         """
 
         while True:
-        
-            #freeze clinic_unavail function for duration of clinic
+
+            # Freeze clinic_unavail function for duration of clinic
             yield self.env.timeout(1)
-            
-            #request clinic with max priority and hold until next clinic
+
+            # Request clinic with max priority and hold until next clinic
             with self.surg_clinic.request(priority=-1) as req:
                 # Freeze the function until the request can be met (this
                 # ensures that the last patient in clinic will be seen)
@@ -423,11 +461,11 @@ class Neurosurgery_Pathway:
         or otherwise)
         """
         while True:
-        
-            #freeze theatres_unavail function for duration of list
+
+            # Freeze theatres_unavail function for duration of list
             yield self.env.timeout(1)
-            
-            #request resource with max priority and hold until next list
+
+            # Request resource with max priority and hold until next list
             with self.theatres.request(priority=-1) as req:
                 # Freeze the function until the request can be met (this
                 # ensures that the last theatre case will be completed)
@@ -474,7 +512,12 @@ class Neurosurgery_Pathway:
         df_to_add = pd.DataFrame({'time_entered_pathway': [patient.time_entered_pathway],
                                   'overall_q_time': [patient.overall_q_time]})
 
-        # add to main dataframe
+        # Add to main dataframe
+
+        # TODO: SR NOTE: At some point you may want to adjust this to speed up the model
+        # Concatenating dataframes is relatively slow and memory-heavy compared to something
+        # like concatenating a list of dictionaries and turning it into a dataframe at the end
+
         self.queue_times_df = pd.concat([self.queue_times_df, df_to_add])
 
     # A method to save the wait times from this run to a csv file
@@ -484,7 +527,7 @@ class Neurosurgery_Pathway:
         """
         # Preview the dataframe in the console
         print(self.queue_times_df.head())
-        self.queue_times_df.to_csv(f'wait_times_run_{self.run_number}.csv')
+
 
     # A method to write the queue numbers to a csv file
     def write_queue_numbers(self):
@@ -507,10 +550,10 @@ class Neurosurgery_Pathway:
         # Fill queues
         self.env.process(self.prefill_queues())
 
-        # start entity generators
+        # Start entity generators
         self.env.process(self.generate_referrals())
 
-        #simulate interval between clinics and lists
+        # Simulate interval between clinics and lists
         self.env.process(self.clinic_unavail())
         self.env.process(self.theatres_unavail())
 
@@ -518,10 +561,10 @@ class Neurosurgery_Pathway:
         self.env.process(self.monitor(self.env, self.active_entities,
                                       self.sim_duration, self.end_of_sim))
 
-        #run simulation
+        # Run simulation
         self.env.run(until=self.end_of_sim)
 
-        #write results to csv
+        # Write results to csv
         self.write_queue_times()
         self.write_queue_numbers()
         self.write_event_log()
