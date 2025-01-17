@@ -87,10 +87,7 @@ class Neurosurgery_Pathway:
         #setup values from defaults and calculate
         self.referrals_per_week = referrals_per_week
         # Calculate the average inter-arrival time between referrals
-        self.referral_interval = 7 / referrals_per_week
-        
-        self.surg_clinic_attendances = surg_clinic_attendances
- 
+        self.referral_interval = 1 / referrals_per_week
         self.theatre_list_per_week = theatre_list_per_week
         self.theatre_list_capacity = theatre_list_capacity
 

@@ -10,7 +10,7 @@ class g:
 
     # number of referrals per week
     referrals_per_week = 350
-    referral_interval = 7 / referrals_per_week
+    referral_interval = 1 / referrals_per_week
 
     # number of clinics per week and capacity
     surg_clinic_per_week = 2
