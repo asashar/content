@@ -9,6 +9,12 @@ import csv
 from SurgeryPatient import Patient
 from global_params import g
 
+import logging
+# log = logging.getLogger(__name__)
+
+from utils import setup_logger
+log = setup_logger(level=logging.INFO)  # Configure global logging
+
 class Neurosurgery_Pathway:
 
     def __init__(self, run_number,
@@ -95,6 +101,7 @@ class Neurosurgery_Pathway:
 
     # method to pre fill queues with set numbers
     def prefill_queues(self):
+        log.debug(f"Prefilling non-admitted queues with {self.fill_non_admitted_queue} patients")
 
         # fill non-admitted queue
         for i in range(self.fill_non_admitted_queue):
@@ -113,7 +120,9 @@ class Neurosurgery_Pathway:
             # need to have yield statement so code works - timeout for zero time
             yield self.env.timeout(0)
 
-        # fill admitted queue
+        log.debug(f"Prefilling admitted queues with {self.fill_admitted_queue} patients")
+
+        # Fill admitted queue
         for i in range(self.fill_admitted_queue):
 
             # increment patient counter by 1
@@ -142,8 +151,9 @@ class Neurosurgery_Pathway:
             
             #create new patient
             pt = Patient(self.patient_counter)
-            
-            #decide if needs surgery and end sim
+            log.debug(f"Day {self.env.now:.3f}: Adding Patient {self.patient_counter} to the simulation")
+
+            # Decide if the patient needs surgery
             self.determine_surgery(pt)
             self.determine_end_sim(pt)
 
@@ -157,8 +167,9 @@ class Neurosurgery_Pathway:
 
             #randomly sample time to next referral
             sampled_interref_time = random.expovariate(1.0/self.referral_interval)
-            
-            #freeze until time has elapsed
+            log.debug(f"Next patient arriving in {sampled_interref_time:.3f} weeks ({sampled_interref_time * 24 * 60:.2f} minutes)")
+
+            # Freeze until time has elapsed
             yield self.env.timeout(sampled_interref_time)
 
     #method to enter pathway
@@ -257,9 +268,12 @@ class Neurosurgery_Pathway:
             if self.env.now >= self.sim_duration and self.active_entities <= 0:
                 # trigger end of simulation event
                 self.end_of_sim.succeed()
+                log.info(f"""Simulation terminated at week {self.env.now} after reaching 0 active
+                         entities and exceeding the minimum number of weeks ({self.sim_duration})""")
                 break
-            #else:
-                #print(self.active_entities)
+                break
+            else:
+                log.info(f"Simulation week {self.env.now}: {self.active_entities} active entities remaining")
 
     #method to store queue times
     def store_queue_times(self, patient):
