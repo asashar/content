@@ -21,7 +21,7 @@ tries to capture the waiting times for each project during the project.
 - model2.py: this is the model for the project, and includes the Streamlit
 commands to create the app.
 
-This produces various csv files that record thewaiting times.
+This produces various csv files that record the waiting times.
 
 STREAMLIT
 For Streamlit, a config.toml file is saved in the .streamlit folder. This is
