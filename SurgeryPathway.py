@@ -589,9 +589,8 @@ class Neurosurgery_Pathway:
         self.env.process(self.clinic_unavail())
         self.env.process(self.theatres_unavail())
 
-        #use monitor() to check if sim should end
-        self.env.process(self.monitor(self.env, self.active_entities,
-                                      self.sim_duration, self.end_of_sim))
+        # Use monitor() to check if sim should end
+        self.env.process(self.monitor())
 
         # Run simulation
         self.env.run(until=self.end_of_sim)
