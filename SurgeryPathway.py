@@ -81,6 +81,9 @@ class Neurosurgery_Pathway:
         self.active_entities = 0
         self.patient_counter = 0
 
+        # Add an empty list to store our event logs in
+        self.event_log = []
+
         #setup values from defaults and calculate
         self.referrals_per_week = referrals_per_week
         self.referral_interval = 7 / referrals_per_week
@@ -177,8 +180,13 @@ class Neurosurgery_Pathway:
             #create new patient
             pt = Patient(self.patient_counter)
             pt.from_prefills = True
-
-            #get simpy env to run enter_pathway method with this patient
+            self.event_log.append(
+                {'patient': self.patient_counter, 'event_type': 'arrival_departure',
+                 'event': 'arrival', 'time': self.env.now,
+                 'prefill': pt.from_prefills, 'prefill_already_seen_clinic': pt.already_seen_clinic,
+                 'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
+                 }
+            )
             self.env.process(self.enter_pathway(pt))
 
             # need to have yield statement so code works - timeout for zero time
@@ -198,7 +206,13 @@ class Neurosurgery_Pathway:
             pt.already_seen_clinic = True
             pt.from_prefills = True
 
-            # get simpy env to run enter_pathway method with this patient
+            self.event_log.append(
+                {'patient': self.patient_counter, 'event_type': 'arrival_departure',
+                 'event': 'arrival', 'time': self.env.now,
+                 'prefill': pt.from_prefills, 'prefill_already_seen_clinic': pt.already_seen_clinic,
+                 'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
+                 }
+            )
             self.env.process(self.enter_pathway(pt))
 
             # need to have yield statement so code works - timeout for zero time
@@ -230,8 +244,13 @@ class Neurosurgery_Pathway:
             #if before end sim, increment counter
             if pt.before_end_sim == True:
                 self.active_entities += 1
-                
-            #get simpy env to run enter_pathway method with this patient
+            self.event_log.append(
+                {'patient': self.patient_counter, 'event_type': 'arrival_departure',
+                 'event': 'arrival', 'time': self.env.now,
+                 'prefill': pt.from_prefills, 'prefill_already_seen_clinic': pt.already_seen_clinic,
+                 'before_end_sim': pt.before_end_sim, 'surgery_required': pt.needs_surgery
+                 }
+            )
             self.env.process(self.enter_pathway(pt))
             #print(f'Patient {pt.id} has been generated and entered the clinic queue')
 
@@ -257,6 +276,15 @@ class Neurosurgery_Pathway:
         """
 
         if not patient.already_seen_clinic:
+            self.event_log.append(
+                {'patient': patient.id, 'event_type': 'queue',
+                 'event': 'queue_clinic', 'time': self.env.now,
+                 'prefill': patient.from_prefills,
+                 'prefill_already_seen_clinic': patient.already_seen_clinic,
+                 'before_end_sim': patient.before_end_sim,
+                 'surgery_required': patient.needs_surgery
+                 }
+            )
             # record start of queue time and add to tracker
             start_q_clinic = self.env.now
             self.fill_non_admitted_queue += 1
@@ -265,6 +293,16 @@ class Neurosurgery_Pathway:
             # request clinic resource
             with self.surg_clinic.request() as req:
                 yield req
+                self.event_log.append(
+                    {'patient': patient.id, 'event_type': 'resource_use',
+                    'event': 'surg_clinic_begins', 'time': self.env.now,
+                    'resource_id': 1,
+                    'prefill': patient.from_prefills,
+                    'prefill_already_seen_clinic': patient.already_seen_clinic,
+                    'before_end_sim': patient.before_end_sim,
+                    'surgery_required': patient.needs_surgery
+                    }
+                )
 
                 # record end of queue time and add to tracker
                 end_q_clinic = self.env.now
@@ -275,18 +313,44 @@ class Neurosurgery_Pathway:
 
                 # freeze for clinic appointment duration
                 yield self.env.timeout(self.surg_clinic_duration)
-                #print(f'Patient {patient.id} has left the clinic queue')
+
+                self.event_log.append(
+                    {'patient': patient.id, 'event_type': 'resource_use_end',
+                    'event': 'surg_clinic_complete', 'time': self.env.now,
+                    'resource_id': 1,
+                    'prefill': patient.from_prefills,
+                    'prefill_already_seen_clinic': patient.already_seen_clinic,
+                    'before_end_sim': patient.before_end_sim,
+                    'surgery_required': patient.needs_surgery
+                    }
+                )
+                # log.debug(f'Patient {patient.id} has left the clinic queue at {self.env.now:.3f}')
 
         # enter queue for theatres
         # record start of queue time and add to tracker
         start_q_theatres = self.env.now
-        self.fill_admitted_queue += 1
+        self.event_log.append(
+                {'patient': patient.id, 'event_type': 'queue',
+                 'event': 'queue_theatre', 'time': self.env.now,
+                 'prefill': patient.from_prefills,
+                 'prefill_already_seen_clinic': patient.already_seen_clinic,
+                 'before_end_sim': patient.before_end_sim,
+                 'surgery_required': patient.needs_surgery
+                 }
+            )
 
         # request theatres resource
         with self.theatres.request() as req:
             yield req
-
-            # record end of queue time and add to tracker
+            self.event_log.append(
+                    {'patient': patient.id, 'event_type': 'resource_use',
+                    'event': 'theatre_begins', 'time': self.env.now, 'resource_id': 1,
+                    'prefill': patient.from_prefills,
+                    'prefill_already_seen_clinic': patient.already_seen_clinic,
+                    'before_end_sim': patient.before_end_sim,
+                    'surgery_required': patient.needs_surgery
+                    }
+                )
             end_q_theatres = self.env.now
             self.fill_admitted_queue -= 1
 
@@ -298,8 +362,15 @@ class Neurosurgery_Pathway:
 
             # freeze for theatre case duration
             yield self.env.timeout(self.theatre_case_duration)
-            
-            # decrement counter if before end sim patient
+            self.event_log.append(
+                    {'patient': patient.id, 'event_type': 'resource_use_end',
+                    'event': 'theatre_complete', 'time': self.env.now, 'resource_id': 1,
+                    'prefill': patient.from_prefills,
+                    'prefill_already_seen_clinic': patient.already_seen_clinic,
+                    'before_end_sim': patient.before_end_sim,
+                    'surgery_required': patient.needs_surgery
+                    }
+                )
             if patient.before_end_sim == True:
                 self.active_entities -= 1
 
@@ -307,8 +378,18 @@ class Neurosurgery_Pathway:
         if not patient.from_prefills and patient.before_end_sim == True:
             self.store_queue_times(patient)
 
+        # Make a note of the time the patient leaves the system having completed all of their
+        # activities
+        self.event_log.append(
+                {'patient': patient.id, 'event_type': 'arrival_departure',
+                 'event': 'depart', 'time': self.env.now,
+                 'prefill': patient.from_prefills,
+                 'prefill_already_seen_clinic': patient.already_seen_clinic,
+                 'before_end_sim': patient.before_end_sim,
+                 'surgery_required': patient.needs_surgery
+                 }
+            )
 
-    # method to model interval between clinic appointments
     def clinic_unavail(self):
         """
         Method to model interval between clinic appointments
@@ -412,10 +493,13 @@ class Neurosurgery_Pathway:
         """
         with open('queue_numbers.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
-            writer.writerow([self.run_number, self.fill_non_admitted_queue,
-                             self.fill_admitted_queue])
-            
-    # A method to run the simulation
+    def write_event_log(self):
+        """
+        A method to write the full event log
+        """
+        # Write the entire dataframe to a csv file
+        pd.DataFrame(self.event_log).sort_values(['patient', 'time']).to_csv(f'event_log_run_{self.run_number}.csv', index=False)
+
     def run(self):
         """
         A method to run the simulation
@@ -440,3 +524,4 @@ class Neurosurgery_Pathway:
         #write results to csv
         self.write_queue_times()
         self.write_queue_numbers()
+        self.write_event_log()
