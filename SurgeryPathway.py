@@ -530,6 +530,11 @@ class Neurosurgery_Pathway:
                 log.info(f"""Simulation terminated at week {self.env.now} after reaching 0 active
                          entities and exceeding the minimum number of weeks ({self.sim_duration})""")
                 break
+            elif self.env.now >= (self.sim_duration + (52 * 10) ):
+                # trigger end of simulation event
+                log.warning(f"""Simulation terminated at week {self.env.now} due to extreme long-running
+                            behaviour. Number of active entities remaining was {self.active_entities}""")
+                self.end_of_sim.succeed()
                 break
             else:
                 log.info(f"Simulation week {self.env.now}: {self.active_entities} active entities remaining")
