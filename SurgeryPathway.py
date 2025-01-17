@@ -522,8 +522,6 @@ class Neurosurgery_Pathway:
         at a different point.
         """
         while True:
-            # check conditions every 1 time unit
-            yield self.env.timeout(1)
             if self.env.now >= self.sim_duration and self.active_entities <= 0:
                 # trigger end of simulation event
                 self.end_of_sim.succeed()
@@ -539,7 +537,10 @@ class Neurosurgery_Pathway:
             else:
                 log.info(f"Simulation week {self.env.now}: {self.active_entities} active entities remaining")
 
-    #method to store queue times
+            # Check conditions every 1 time unit
+            # Note that in this model, 1 time unit represents 1 week
+            yield self.env.timeout(1)
+
     def store_queue_times(self, patient):
         """
         Method to store queue times
