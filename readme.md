@@ -23,11 +23,18 @@ commands to create the app.
 
 This produces various csv files that record the waiting times.
 
-STREAMLIT
-For Streamlit, a config.toml file is saved in the .streamlit folder. This is
-the theme for the streamlit app.
+## The Pathway
 
-The cascading style sheet (css) specifies the font for the streamlit app.
-It uses the font "Istok Web" which is the closest freely-available web font to the NHS Font Frutiger.
+![](pathway_diagram.jpg)
+
+## Web App with Streamlit
 
 To run the streamlit app, make sure you are in the main folder, then run the command `streamlit run model2.py`
+
+### Streamlit App Theming
+
+For Streamlit, a **config.toml** file is saved in the **.streamlit** folder. This is
+the theme for the streamlit app.
+
+The cascading style sheet (css) **style.css** specifies the font for the streamlit app.
+It uses the font "Istok Web" which is the closest freely-available web font to the NHS Font Frutiger.
