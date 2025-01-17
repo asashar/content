@@ -137,10 +137,37 @@ class Neurosurgery_Pathway:
         self.run_number = run_number
 
         #variables to keep track of numbers in queues
-        self.clinic_queue_time = 0
-        self.theatre_queue_time = 0
+        # SR NOTE 18/1/25: These were originally named
+        # self.clinic_queue_time = 0
+        # self.theatre_queue_time = 0
+        # I think they might have been an accidental duplicate of
+        # attributes from the patient class
+        # They didn't appear to be updated later in the code and the naming
+        # of '_time' doesn't appear to match with the initial comment of
+        # '#variables to keep track of numbers in queues'
+        # I have updated these to have the name '_length' and used them
+        # where seems appropriate for keeping track of queues
+        self.clinic_queue_length = 0
+        self.theatre_queue_length = 0
 
-        #create dataframe with queue times
+        # Create dataframe with queue times
+        # NOTE: Later in the model, when writing data to this dataframe, it is only used
+        # to store the patients who were
+        # - not prefills
+        # - not added to the simulation after the 'end time' of the simulation
+        # so it only contains data for those patients who were added during those e.g. 100 weeks
+        # that are being simulated
+        #
+        # TODO: Consider what impacts this may have on reported figures for waits, and how you
+        # may want to explain this as part of the Streamlit app outputs or documentation.
+        # I don't think this is necessarily a problem (as you would otherwise have to generate the
+        # wait times for the existing patients) but it's something you will need to be able to
+        # pass in.
+        # As a future extension to the model, you could look at being able to upload a csv file
+        # that just lists the wait times of the patients on the prefill list. You could then either
+        # use these as-is, or use them to generate a distribution from which you sample wait times
+        # at simulation start for the prefill patients.
+
         data = {'time_entered_pathway': [],
                 'overall_queue_time': []}
         self.queue_times_df = pd.DataFrame(data)
