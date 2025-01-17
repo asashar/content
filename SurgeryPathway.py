@@ -16,6 +16,51 @@ from utils import setup_logger
 log = setup_logger(level=logging.INFO)  # Configure global logging
 
 class Neurosurgery_Pathway:
+    """
+    Defines a model that puts patients through a multi-step neurosurgery pathway.
+
+    Parameters
+    ------
+
+    run_number: int
+        Unique identifier for the simulation run.
+
+    referrals_per_week: int, default is `g.referrals_per_week`
+        Average number of new referrals received to this pathway per week.
+
+    surg_clinic_per_week: int, default is `g.surg_clinic_per_week`
+        Number of surgical clinics per week. Default is `g.surg_clinic_per_week`.
+
+    surg_clinic_capacity: int, default is `g.surg_clinic_capacity`
+        Capacity (number of people it is possible to see) of a surgical clinic.
+
+    theatre_list_per_week: int, default is `g.theatre_list_per_week`
+        Number of theatre lists per week. Default is `g.theatre_list_per_week`.
+
+    theatre_list_capacity: int, default is `g.theatre_list_capacity`
+        Capacity (number of people it is possible to operate on) of a single theatre list.
+
+    trauma_list_per_week: int, default is `g.trauma_list_per_week`
+        Number of trauma lists per week. Default is `g.trauma_list_per_week`.
+
+    weekly_extra_patients: int, default is `g.weekly_extra_patients`
+        Number of extra patients for trauma lists per week.
+
+    prob_needs_surgery: float, default is `g.prob_needs_surgery`
+        Probability a patient needs surgery post-clinic.
+
+    fill_non_admitted_queue: int, default is `g.fill_non_admitted_queue`.
+        Initial non-admitted queue size (patients who are waiting for clinic appointment and potentially surgery).
+
+    fill_admitted_queue: int, default is `g.fill_admitted_queue`
+        Initial admitted queue size (patients who have had clinic appointment but not surgery).
+
+    sim_duration: int, default is `g.sim_duration`
+        Duration of the simulation; interpreted as a number of weeks.
+        Note that the simulation run may exceed this duration so that the full journey of all patients
+        who enter the simulation prior to the point specified by sim_duration will complete their
+        full journies.
+    """
 
     def __init__(self, run_number,
                  referrals_per_week = g.referrals_per_week,
@@ -89,21 +134,40 @@ class Neurosurgery_Pathway:
                 'overall_queue_time': []}
         self.queue_times_df = pd.DataFrame(data)
 
-    #method to determine if patient needs surgery
     def determine_surgery(self, patient):
+        """
+        Method to determine if patient needs surgery
+
+        If randomly generated number from the uniform distribution is below the globally defined
+        probability of needing surgery, patient will be set as needing surgery
+        """
         if random.uniform(0,1) < self.prob_needs_surgery:
             patient.needs_surgery = True
 
-    # method to determine before end sim
     def determine_end_sim(self, patient):
+        """
+        Method to determine if a patient is added to the simulation before the time we
+        have set as the end of the simulation.
+
+        Patients who are added to the simulation before the 'end' - whether this is via prefilling
+        or via being generated as new patients - will count as active entities in the simulation.
+
+        The simulation will continue to run until the number of patients
+        who were entered and tracked as active entities reaches 0 (which may take some time!) -
+        i.e. after the 'simulation end' we will continue to add patients to lists and put patients
+        through their required steps of the pathway
+        """
         if self.env.now >= self.sim_duration:
             patient.before_end_sim = False
 
-    # method to pre fill queues with set numbers
     def prefill_queues(self):
+        """
+        Method to pre fill queues with set numbers that are defined in the model class
+        """
+
         log.debug(f"Prefilling non-admitted queues with {self.fill_non_admitted_queue} patients")
 
-        # fill non-admitted queue
+        # Fill non-admitted queue
         for i in range(self.fill_non_admitted_queue):
 
             #increment patient counter by 1
@@ -140,9 +204,15 @@ class Neurosurgery_Pathway:
             # need to have yield statement so code works - timeout for zero time
             yield self.env.timeout(0)
 
-    #method to generate patient referrals
     def generate_referrals(self):
-        
+        """
+        Method to generate new patients for the neurosurgery simulation model.
+
+        These are new patients who join the waiting list while the simulation is running.
+        'Prefill' patients - those who were on the waiting list at the time the simulation
+        commences - are handled in separate methods.
+        """
+
         #keep generating indefinitely (until simulation ends)
         while True:
             
@@ -172,8 +242,19 @@ class Neurosurgery_Pathway:
             # Freeze until time has elapsed
             yield self.env.timeout(sampled_interref_time)
 
-    #method to enter pathway
     def enter_pathway(self, patient):
+        """
+        Method to put a single patient through the neurosurgery pathway.
+
+        If patients have not already been seen in the clinic, they will first begin queueing
+        for a surgery clinic, which uses the surg_clinic resource.
+
+        Then, all patients who have been passed to this method will progress to entering the
+        theatre queue.
+
+        Finally, patients who were **not** a 'prefill' and who complete their journey before
+        the simulation ends will be added to the queue times.
+        """
 
         if not patient.already_seen_clinic:
             # record start of queue time and add to tracker
@@ -229,6 +310,13 @@ class Neurosurgery_Pathway:
 
     # method to model interval between clinic appointments
     def clinic_unavail(self):
+        """
+        Method to model interval between clinic appointments
+
+        Sends in a high priority resource that will hog the clinic until
+        the next case should be sent in (modelling unavailability e.g. overnight
+        or otherwise)
+        """
 
         while True:
         
@@ -246,7 +334,13 @@ class Neurosurgery_Pathway:
 
      # method to model interval between theatre lists
     def theatres_unavail(self):
+        """
+        Method to model interval between theatre lists
 
+        Sends in a high priority resource that will hog the theatre until
+        the next case should be sent in (modelling unavailability e.g. overnight
+        or otherwise)
+        """
         while True:
         
             #freeze theatres_unavail function for duration of list
@@ -260,8 +354,22 @@ class Neurosurgery_Pathway:
                 
                 yield self.env.timeout(self.theatre_list_interval)
 
-    # method to check if simulation should continue
-    def monitor(self, env, active_entities, end_point, end_of_sim):
+    def monitor(self):
+        """
+        Method to check if simulation should continue
+
+        It should continue until both
+        - the simulation time is later than the 'sim_duration' parameter
+        - the number of active entities in the simulation is 0
+
+        Active entities are those who
+        - were prefills OR were added to the simulation during the period between 0 and sim_duration
+        - have not yet completed their journey through the pathway
+
+        Therefore, the number of active entities will not reach 0 until all prefill patients or
+        patients generated during the initial sim runtime have had surgery or left the pathway
+        at a different point.
+        """
         while True:
             # check conditions every 1 time unit
             yield self.env.timeout(1)
@@ -277,6 +385,9 @@ class Neurosurgery_Pathway:
 
     #method to store queue times
     def store_queue_times(self, patient):
+        """
+        Method to store queue times
+        """
 
         # create temporary dataframe with queue times
         df_to_add = pd.DataFrame({'time_entered_pathway': [patient.time_entered_pathway],
@@ -287,11 +398,18 @@ class Neurosurgery_Pathway:
 
     # A method to save the wait times from this run to a csv file
     def write_queue_times(self):
+        """
+        A method to save the wait times from this run to a csv file
+        """
+        # Preview the dataframe in the console
         print(self.queue_times_df.head())
         self.queue_times_df.to_csv(f'wait_times_run_{self.run_number}.csv')
 
     # A method to write the queue numbers to a csv file
     def write_queue_numbers(self):
+        """
+        A method to write the queue numbers to a csv file
+        """
         with open('queue_numbers.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             writer.writerow([self.run_number, self.fill_non_admitted_queue,
@@ -299,7 +417,10 @@ class Neurosurgery_Pathway:
             
     # A method to run the simulation
     def run(self):
-        # fill queues
+        """
+        A method to run the simulation
+        """
+        # Fill queues
         self.env.process(self.prefill_queues())
 
         # start entity generators
