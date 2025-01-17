@@ -362,7 +362,8 @@ class Neurosurgery_Pathway:
                 self.clinic_queue_length -= 1
 
                 # record total queue time
-                patient.clinic_q_time = end_q_clinic - start_q_clinic
+                # patient.clinic_q_time = end_q_clinic - start_q_clinic # SR this was incorrectly _q_ instead of _queue_
+                patient.clinic_queue_time = end_q_clinic - start_q_clinic
 
                 # freeze for clinic appointment duration
                 yield self.env.timeout(self.surg_clinic_duration)
