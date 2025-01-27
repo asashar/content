@@ -381,8 +381,9 @@ class Neurosurgery_Pathway:
             )
             # record start of queue time and add to tracker
             start_q_clinic = self.env.now
-            # self.fill_non_admitted_queue += 1 # SR 16/1 have commented out as think incorrect attribute
-            self.clinic_queue_length += 1
+            if self.env.now <= self.sim_duration:
+                # self.fill_non_admitted_queue += 1 # SR 16/1 have commented out as think incorrect attribute
+                self.clinic_queue_length += 1
             #print(f'Patient {patient.id} is waiting for clinic')
 
             # request clinic resource
