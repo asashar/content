@@ -9,7 +9,7 @@ class g:
     # -------------------- #
 
     # number of referrals per week
-    referrals_per_week = 350
+    referrals_per_week = 30 # 350
     referral_interval = 1 / referrals_per_week
 
     # number of clinics per week and capacity
@@ -21,8 +21,8 @@ class g:
     theatre_list_capacity = 2
 
     # numbers to add to queues before simulation starts
-    fill_non_admitted_queue = 4163
-    fill_admitted_queue = 1143
+    fill_non_admitted_queue = 300 # 4163
+    fill_admitted_queue = 110 # 1143
 
     # proportion of patients requiring surgical admission
     prob_needs_surgery = 0.80
@@ -38,7 +38,7 @@ class g:
     sim_duration = 100
 
     # number of times to run simulation
-    number_of_runs = 5
+    number_of_runs = 3
 
     # --------------------- #
     # Historical Figures    #
