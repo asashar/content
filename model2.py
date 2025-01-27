@@ -79,13 +79,40 @@ with st.sidebar:
   REFS_PER_WEEK = st.number_input('Referrals Per Week',
                                          step=1,
                                          value = g.referrals_per_week)
-  
-  ATTENDANCES_PER_WEEK = st.number_input('Clinics Per Week',
-                                           step = 1,
-                                           value = g.surg_clinic_attendances)
+
+# TODO: SR Note: Have commented this out for now as I can't see how this is meant to
+# fit in - have asked for clarification
+#   ATTENDANCES_PER_WEEK = st.number_input('Clinics Per Week',
+#                                            step = 1,
+#                                            value = g.surg_clinic_attendances)
+
+  st.divider()
+
   CLINIC_QUEUE = st.number_input('Patients Waiting for Clinic Appointment at Start of Simulation',
                                     step = 1,
                                     value = g.fill_non_admitted_queue)
+
+  THEATRE_QUEUE = st.number_input('Patients Waiting for Theatre at Start of Simulation',
+                                    step = 1,
+                                    value = g.fill_admitted_queue)
+
+  st.divider()
+
+  st.subheader("Clinic Parameters")
+
+  CLINICS_PER_WEEK = st.number_input('Clinics Per Week',
+                                            step = 1,
+                                            value = g.surg_clinic_per_week)
+
+  CLINIC_APPOINTMENTS_PER_CLINIC = st.number_input('Appointments per Clinic',
+                                            step = 1,
+                                            value = g.surg_clinic_appts)
+
+  st.caption(f"*This gives you a total of {CLINICS_PER_WEEK*CLINIC_APPOINTMENTS_PER_CLINIC:.0f} clinic slots per week*")
+
+  st.divider()
+
+  st.subheader("Theatre Parameters")
 
   LISTS_PER_WEEK = st.number_input('Theatre Lists Per Week',
                                             step = 1,
@@ -94,26 +121,37 @@ with st.sidebar:
   LIST_CAPACITY = st.number_input('Cases Per Theatre List',
                                             step = 1,
                                             value = g.theatre_list_capacity)
-    
+
+  st.caption(f"*This gives you a total of {LISTS_PER_WEEK*LIST_CAPACITY:.0f} theatre slots per week*")
+
   PROB_SURGERY = st.slider('Percentage of Patients requiring Surgery',
                                             step = 0.01,
                                             value = g.prob_needs_surgery)
 
-  THEATRE_QUEUE = st.number_input('Patients Waiting for Theatre at Start of Simulation',
-                                        step = 1,
-                                        value = g.fill_admitted_queue)
-
-  EXTRA_PATIENTS = st.number_input(':green[Extra Patients Per List]',
+  EXTRA_PATIENTS = st.number_input(':green[**Extra Patients Per List**]',
                                         step = 1,
                                         value = g.weekly_extra_patients)
 
+  st.divider()
+
+  st.subheader("Simulation Parameters")
+
   NUM_OF_RUNS = st.number_input('Number of Times to Run Simulation',
-                                        step = 1,   
+                                        step = 1,
                                         value = g.number_of_runs)
 
+  sim_length_help_text = """The simulation length determines the number of weeks that new patients
+  to monitor will be generated for.
+
+  The simulation will continue to run until every patient who is waiting for a clinic appointment or
+  theatre at the start of the simulation, or who gets added to the waiting list during the weeks
+  specified in this input, completes their journey through the system.
+  """
+
   LENGTH_OF_SIM = st.number_input('Length of Time to Simulate (weeks)',
-                                        step = 1,
-                                        value = g.sim_duration)
+                                   step = 1,
+                                   value = g.sim_duration,
+                                   help=sim_length_help_text)
 
 ############ The model itself
 
