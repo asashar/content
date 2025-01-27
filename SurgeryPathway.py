@@ -492,10 +492,10 @@ class Neurosurgery_Pathway:
                 self.active_entities -= 1
 
         # Add patient to queue times dataframe
-        # NOTE - only patients who were not prefills and who were not in the
+        # NOTE - only patients who were **not prefills** and who were
         # TODO - though it will make your dataframe bigger, you may wish at some point to switch
         # to recording all patients in your dataframe, but add additional columns that log whether
-        # they were prefill patients
+        # they were prefill patients and whether they were added before the end of the simulation
         if not patient.from_prefills and patient.before_end_sim == True:
             self.store_queue_times(patient)
 
