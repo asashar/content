@@ -600,7 +600,7 @@ Number of active entities remaining was {self.active_entities}""")
 
         # create temporary dataframe with queue times
         df_to_add = pd.DataFrame({'time_entered_pathway': [patient.time_entered_pathway],
-                                  'overall_q_time': [patient.overall_q_time]})
+                                  'overall_queue_time': [patient.overall_queue_time]})
 
         # Add to main dataframe
 
