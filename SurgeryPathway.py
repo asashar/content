@@ -325,7 +325,7 @@ class Neurosurgery_Pathway:
 
             # Create a new patient, passing the counter to serve as the patient's ID
             pt = Patient(self.patient_counter)
-            log.debug(f"Day {self.env.now:.3f}: Adding Patient {self.patient_counter} to the simulation")
+            log.debug(f"Week {self.env.now:.3f}: Adding Patient {self.patient_counter} to the simulation")
 
             # Decide if the patient needs surgery
             self.determine_surgery(pt)
