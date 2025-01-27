@@ -1,5 +1,7 @@
 
 import logging
+import os
+from time import sleep
 
 def setup_logger(log_file="log.txt", level=logging.DEBUG):
     """
@@ -8,6 +10,14 @@ def setup_logger(log_file="log.txt", level=logging.DEBUG):
     Parameters:
         log_file (str): The path to the log file.
     """
+    # Delete the existing log file if it exists
+    try:
+        if os.path.exists(log_file):
+            os.remove(log_file)
+        sleep(1)
+    except PermissionError:
+        print("Unable to delete existing log file")
+
     # Create a logger
     logger = logging.getLogger("dual_logger")
     logger.setLevel(level)  # Set the lowest level to capture all logs
