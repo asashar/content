@@ -172,10 +172,15 @@ class Trial_Results_Calculator:
         # read trial results csv
         trial_results_df = pd.read_csv('all_wait_times.csv')
 
-        # return number waiting over 52 weeks who entered pathway on final day of simulation
-        last_day = self.sim_duration - 1
-        return trial_results_df[trial_results_df['time_entered_pathway'] > last_day]['overall_q_time']>52
-        #trial_results_df['Long Waiters'] = [1 if x >52 else 0 for x in trial_results_df['overall_q_time']]
+        # return number waiting over 52 weeks who entered pathway on final week of simulation
+        last_week = self.sim_duration - 1
+        entered_final_week = trial_results_df[trial_results_df['time_entered_pathway'] > last_week]
+        long_wait = entered_final_week[entered_final_week['overall_queue_time'] >= 52]
+        return int(long_wait.groupby('run').count()['overall_queue_time'].mean().round(0))
+
+
+        # return trial_results_df[trial_results_df['time_entered_pathway'] > last_week]['overall_queue_time']>52
+        #trial_results_df['Long Waiters'] = [1 if x >52 else 0 for x in trial_results_df['overall_queue_time']]
 
     def readout_total_65_plus(self):
         """
@@ -189,6 +194,9 @@ class Trial_Results_Calculator:
         # read trial results csv
         trial_results_df = pd.read_csv('all_wait_times.csv')
 
-        # return number waiting over 65 weeks who entered pathway on final day of simulation
-        last_day = self.sim_duration - 1
-        return trial_results_df[trial_results_df['time_entered_pathway'] > last_day]['overall_q_time']>65
+        # return number waiting over 65 weeks who entered pathway on final week of simulation
+        last_week = self.sim_duration - 1
+        entered_final_week = trial_results_df[trial_results_df['time_entered_pathway'] > last_week]
+        long_wait = entered_final_week[entered_final_week['overall_queue_time'] >= 65]
+        return int(long_wait.groupby('run').count()['overall_queue_time'].mean().round(0))
+        # return trial_results_df[trial_results_df['time_entered_pathway'] > last_week]['overall_queue_time']>65
