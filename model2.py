@@ -216,10 +216,16 @@ with tab1:
         # calculate number of patients waiting 52+ weeks at end of simulation
             TOTAL_52_plus = demo_trial_results_calculator.readout_total_52_plus()
 
+            # TOTAL_52_plus_sum = sum(TOTAL_52_plus)
+
+            # TOTAL_52_plus_mean = sum(TOTAL_52_plus)
+
         # calculate number of patients waiting 65+ weeks at end of simulation
             TOTAL_65_plus = demo_trial_results_calculator.readout_total_65_plus()
 
-            TOTAL_65_plus_Sum = sum(demo_trial_results_calculator.readout_total_65_plus())
+            # TOTAL_65_plus_sum = sum(TOTAL_65_plus)
+
+            # TOTAL_65_plus_mean = mean(TOTAL_65_plus)
 
         # calculate average wait times at start and end of simulation
             MEAN_WAIT_START = demo_trial_results_calculator.readout_wait_time_start()
@@ -230,16 +236,36 @@ with tab1:
 
         # print results
             st.header('Results')
+
+            # st.dataframe(demo_trial_results_calculator.overall_q_numbers_df)
+
             st.subheader('Numbers on Waiting Lists')
             st.write(f'At the start of the simulation, the total number of patients on the waiting list was {TOTAL_QUEUE_START}.')
-            st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patients on the waiting list is predicted to be {round(TOTAL_QUEUE_END)}.')
-            st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patiens waiting >52 weeks is predicted to be **:red[{sum(TOTAL_52_plus)}]**.')
-            st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patiens waiting >65 weeks is predicted to be **:red[{sum(TOTAL_65_plus)}]**.')
 
-            if TOTAL_65_plus_Sum == 0:
-                st.success("Great! This model anticipates no 65+ waiters (possibly, hopefully)")
+            if TOTAL_QUEUE_START > TOTAL_QUEUE_END:
+                CHANGE = "decrease"
+            elif TOTAL_QUEUE_START < TOTAL_QUEUE_END:
+                CHANGE = "increase"
             else:
-                st.error("Oh no. There may be long waits")
+                CHANGE = None
+
+            if CHANGE == "decrease":
+                st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patients on the waiting list is predicted to be {round(TOTAL_QUEUE_END)} (a :green[decrease] of {TOTAL_QUEUE_START - TOTAL_QUEUE_END:.0f}).')
+            elif CHANGE == "increase":
+                st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patients on the waiting list is predicted to be {round(TOTAL_QUEUE_END)} (an :red[increase] of {TOTAL_QUEUE_END - TOTAL_QUEUE_START:.0f}).')
+            else:
+                st.write(f'After {LENGTH_OF_SIM} weeks, the total number of patients on the waiting list is predicted to be {round(TOTAL_QUEUE_END)}. This is unchanged from the starting figure of ({round(TOTAL_QUEUE_START)}).')
+
+            st.write(f'After {LENGTH_OF_SIM} weeks, of the patients who entered the pathway in week {LENGTH_OF_SIM-1}, on average')
+            st.write(f'- **:red[{TOTAL_52_plus}]** of them went on to wait >52 weeks in the simulation.')
+            st.write(f'- **:red[{TOTAL_65_plus}]** of them when on to wait >65 weeks in the simulation.')
+
+            # st.write(f'After {LENGTH_OF_SIM} weeks, of the patients who entered the pathway in week {LENGTH_OF_SIM-1}, **:red[{TOTAL_65_plus}]** of them were predicted to wait >65 weeks.')
+
+            if TOTAL_65_plus == 0:
+                st.success("Great! This model anticipates no 65+ week waiters (possibly, hopefully)")
+            else:
+                st.error("Oh no. There may be long waits of 65+ weeks")
 
         # demo_trial_results_calculator.readout_wait_time_end()
 
@@ -250,29 +276,42 @@ with tab1:
                 st.plotly_chart(demo_trial_results_calculator.plot_wait_times())
             with col2:
                 st.plotly_chart(demo_trial_results_calculator.plot_queue_numbers())
+                st.caption(f"The 'after' values are the **average** number of waiters at the end of {LENGTH_OF_SIM} weeks across {NUM_OF_RUNS} simulations runs")
 
 # Creating the dataframe
     wait_times_df = pd.read_csv('all_wait_times.csv')
 
 # Add new columns for the long waiters
-    
-    wait_times_df['Long Waiters 52+'] = [1 if x > 52 else 0 for x in wait_times_df['overall_q_time']]
-    wait_times_df['Long Waiters 65+'] = [1 if x > 65 else 0 for x in wait_times_df['overall_q_time']]
 
-    long_waiters_df = {'52+': wait_times_df[wait_times_df["Long Waiters 52+"] == 1]["Long Waiters 52+"].value_counts() ,
-           '65+' : wait_times_df[wait_times_df["Long Waiters 65+"] == 1]["Long Waiters 65+"].value_counts()
-           }
+    wait_times_df['Long Waiters 52+'] = [True if x > 52 else False for x in wait_times_df['overall_queue_time']]
+    wait_times_df['Long Waiters 65+'] = [True if x > 65 else False for x in wait_times_df['overall_queue_time']]
+
+    # long_waiters_df = {'52+': wait_times_df[wait_times_df["Long Waiters 52+"] == 1]["Long Waiters 52+", "run"].value_counts() ,
+    #        '65+' : wait_times_df[wait_times_df["Long Waiters 65+"] == 1]["Long Waiters 65+"].value_counts()
+    #        }
+
+    long_waiters_df_52 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 52+"] == True].value_counts(['run', 'Long Waiters 52+'])).reset_index()
+    long_waiters_df_52 = long_waiters_df_52.drop(columns='Long Waiters 52+').rename(columns={'count': 'Long Waiters 52+'})
+    long_waiters_df_65 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 65+"] == True].value_counts(['run', 'Long Waiters 65+'])).reset_index()
+    long_waiters_df_65 = long_waiters_df_65.drop(columns='Long Waiters 65+').rename(columns={'count': 'Long Waiters 65+'})
+    long_waiters_df = pd.merge(
+        left=long_waiters_df_52,
+        right=long_waiters_df_65
+    )
+    long_waiters_average_df = long_waiters_df.mean()
 
     # This creates a chart showing the total 52+ and 65+ waits
     # This is referenced in the columns below.
     # I added a 'if button_run_pressed: ' further below, because otherwise
     # the chart and score cards were showing before you run the simulation.
-    fig = px.bar(long_waiters_df, barmode='group',
-                title='Number of long waiters',
-                labels={'value': 'Number of long waiters',
-                        'name': 'Waiting Groups',
-                       'variable': 'Wait Group Bands'
-                        })
+    fig = px.bar(long_waiters_df.melt(id_vars='run').groupby('variable').mean().reset_index(),
+             x="variable", y="value",
+                 barmode='group',
+                 title='Number of long waiters',
+                 labels={'value': 'Average Number of Long Waiters Per Run',
+                            'name': 'Waiting Groups',
+                            'variable': 'Wait Group Bands'
+                            })
 
 
     fig.update_layout(
@@ -283,13 +322,12 @@ with tab1:
     )
     )
 
-    if button_run_pressed:   
+    if button_run_pressed:
 
-        # To print the DataFrame, uncomment the below.
-        # st.dataframe(long_waiters_df)
+        long_waiters_52 = int(long_waiters_df['Long Waiters 52+'].mean().round(0))
+        long_waiters_65 = int(long_waiters_df['Long Waiters 65+'].mean().round(0))
 
-        long_waiters_52 = long_waiters_df['52+']
-        long_waiters_65 = long_waiters_df['65+']
+        st.caption(f"The following values relate to *all* patients generated before {LENGTH_OF_SIM} weeks")
 
         col1, col2, col3 = st.columns([3,1,1])
 
@@ -298,13 +336,18 @@ with tab1:
         with col2:
             st.metric(
             label="Number of 52+ waiters",
+            help="Number of patients across simulation waiting more than 52+ weeks",
             value= long_waiters_52
             )
         with col3:
             st.metric(
             label="Number of 65+ waiters",
+            help="Number of patients across simulation waiting more than 65+ weeks",
             value= long_waiters_65
-            )    
+            )
+
+        # To print the DataFrame, uncomment the below.
+        # st.dataframe(long_waiters_df)
 
 
 #### This is the second tab.
