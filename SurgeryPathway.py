@@ -65,7 +65,7 @@ class Neurosurgery_Pathway:
     def __init__(self, run_number,
                  referrals_per_week = g.referrals_per_week,
                  surg_clinic_per_week = g.surg_clinic_per_week,
-                 surg_clinic_attendances = g.surg_clinic_attendances,
+                 surg_clinic_capacity = g.surg_clinic_appts,
                  theatre_list_per_week = g.theatre_list_per_week,
                  theatre_list_capacity = g.theatre_list_capacity,
                  trauma_list_per_week = g.trauma_list_per_week,
