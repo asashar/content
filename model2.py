@@ -186,12 +186,15 @@ with tab1:
                 print (f"Run {run+1} of {NUM_OF_RUNS}")
                 demo_pathway_model = Neurosurgery_Pathway(run,
                                                       referrals_per_week=REFS_PER_WEEK,
-                                                      surg_clinic_attendances=ATTENDANCES_PER_WEEK,
-                                                      fill_non_admitted_queue=CLINIC_QUEUE,
+                                                      surg_clinic_per_week= CLINIC_APPOINTMENTS_PER_CLINIC,
+                                                      surg_clinic_capacity=CLINICS_PER_WEEK,
+                                                      theatre_list_per_week=LISTS_PER_WEEK,
+                                                      theatre_list_capacity=LIST_CAPACITY,
                                                       prob_needs_surgery = PROB_SURGERY,
-                                                      #fill_admitted_pathway = THEATRE_QUEUE,
+                                                      fill_non_admitted_queue=CLINIC_QUEUE,
                                                       fill_admitted_queue = THEATRE_QUEUE,
-                                                      sim_duration=LENGTH_OF_SIM
+                                                      sim_duration=LENGTH_OF_SIM,
+                                                      weekly_extra_patients=EXTRA_PATIENTS
                                                       )
                 demo_pathway_model.run()
 
