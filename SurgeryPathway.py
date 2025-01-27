@@ -648,8 +648,8 @@ Number of active entities remaining was {self.active_entities}""")
         self.env.process(self.generate_referrals())
 
         # Simulate interval between clinics and lists
-        self.env.process(self.clinic_unavail())
-        self.env.process(self.theatres_unavail())
+        # self.env.process(self.clinic_unavail())
+        # self.env.process(self.theatres_unavail())
 
         # Use monitor() to check if sim should end
         self.env.process(self.monitor())
