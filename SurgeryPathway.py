@@ -467,8 +467,8 @@ class Neurosurgery_Pathway:
             # TODO: SR NOTE: For consistency with later results recording, should this also check
             # whether the simulation duration has elapsed?
             if not patient.from_prefills:
-                patient.theatre_q_time = end_q_theatres - start_q_theatres
-                patient.overall_q_time = end_q_theatres - start_q_clinic
+                patient.theatre_queue_time = end_q_theatres - start_q_theatres
+                patient.overall_queue_time = end_q_theatres - start_q_clinic
                 patient.time_entered_pathway = start_q_clinic
 
             # Freeze for theatre case duration
