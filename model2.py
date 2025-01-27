@@ -278,51 +278,49 @@ with tab1:
                 st.plotly_chart(demo_trial_results_calculator.plot_queue_numbers())
                 st.caption(f"The 'after' values are the **average** number of waiters at the end of {LENGTH_OF_SIM} weeks across {NUM_OF_RUNS} simulations runs")
 
-# Creating the dataframe
-    wait_times_df = pd.read_csv('all_wait_times.csv')
+    # Creating the dataframe
+        wait_times_df = pd.read_csv('all_wait_times.csv')
 
-# Add new columns for the long waiters
+    # Add new columns for the long waiters
 
-    wait_times_df['Long Waiters 52+'] = [True if x > 52 else False for x in wait_times_df['overall_queue_time']]
-    wait_times_df['Long Waiters 65+'] = [True if x > 65 else False for x in wait_times_df['overall_queue_time']]
+        wait_times_df['Long Waiters 52+'] = [True if x > 52 else False for x in wait_times_df['overall_queue_time']]
+        wait_times_df['Long Waiters 65+'] = [True if x > 65 else False for x in wait_times_df['overall_queue_time']]
 
-    # long_waiters_df = {'52+': wait_times_df[wait_times_df["Long Waiters 52+"] == 1]["Long Waiters 52+", "run"].value_counts() ,
-    #        '65+' : wait_times_df[wait_times_df["Long Waiters 65+"] == 1]["Long Waiters 65+"].value_counts()
-    #        }
+        # long_waiters_df = {'52+': wait_times_df[wait_times_df["Long Waiters 52+"] == 1]["Long Waiters 52+", "run"].value_counts() ,
+        #        '65+' : wait_times_df[wait_times_df["Long Waiters 65+"] == 1]["Long Waiters 65+"].value_counts()
+        #        }
 
-    long_waiters_df_52 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 52+"] == True].value_counts(['run', 'Long Waiters 52+'])).reset_index()
-    long_waiters_df_52 = long_waiters_df_52.drop(columns='Long Waiters 52+').rename(columns={'count': 'Long Waiters 52+'})
-    long_waiters_df_65 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 65+"] == True].value_counts(['run', 'Long Waiters 65+'])).reset_index()
-    long_waiters_df_65 = long_waiters_df_65.drop(columns='Long Waiters 65+').rename(columns={'count': 'Long Waiters 65+'})
-    long_waiters_df = pd.merge(
-        left=long_waiters_df_52,
-        right=long_waiters_df_65
-    )
-    long_waiters_average_df = long_waiters_df.mean()
+        long_waiters_df_52 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 52+"] == True].value_counts(['run', 'Long Waiters 52+'])).reset_index()
+        long_waiters_df_52 = long_waiters_df_52.drop(columns='Long Waiters 52+').rename(columns={'count': 'Long Waiters 52+'})
+        long_waiters_df_65 = pd.DataFrame(wait_times_df[wait_times_df["Long Waiters 65+"] == True].value_counts(['run', 'Long Waiters 65+'])).reset_index()
+        long_waiters_df_65 = long_waiters_df_65.drop(columns='Long Waiters 65+').rename(columns={'count': 'Long Waiters 65+'})
+        long_waiters_df = pd.merge(
+            left=long_waiters_df_52,
+            right=long_waiters_df_65
+        )
+        long_waiters_average_df = long_waiters_df.mean()
 
-    # This creates a chart showing the total 52+ and 65+ waits
-    # This is referenced in the columns below.
-    # I added a 'if button_run_pressed: ' further below, because otherwise
-    # the chart and score cards were showing before you run the simulation.
-    fig = px.bar(long_waiters_df.melt(id_vars='run').groupby('variable').mean().reset_index(),
-             x="variable", y="value",
-                 barmode='group',
-                 title='Number of long waiters',
-                 labels={'value': 'Average Number of Long Waiters Per Run',
-                            'name': 'Waiting Groups',
-                            'variable': 'Wait Group Bands'
-                            })
+        # This creates a chart showing the total 52+ and 65+ waits
+        # This is referenced in the columns below.
+        # I added a 'if button_run_pressed: ' further below, because otherwise
+        # the chart and score cards were showing before you run the simulation.
+        fig = px.bar(long_waiters_df.melt(id_vars='run').groupby('variable').mean().reset_index(),
+                x="variable", y="value",
+                    barmode='group',
+                    title='Number of long waiters',
+                    labels={'value': 'Average Number of Long Waiters Per Run',
+                                'name': 'Waiting Groups',
+                                'variable': 'Wait Group Bands'
+                                })
 
 
-    fig.update_layout(
-        xaxis = dict(
-        tickmode = 'array',
-        tickvals = [1],
-        ticktext = ['Waiting Groups']
-    )
-    )
-
-    if button_run_pressed:
+        fig.update_layout(
+            xaxis = dict(
+            tickmode = 'array',
+            tickvals = [1],
+            ticktext = ['Waiting Groups']
+        )
+        )
 
         long_waiters_52 = int(long_waiters_df['Long Waiters 52+'].mean().round(0))
         long_waiters_65 = int(long_waiters_df['Long Waiters 65+'].mean().round(0))
