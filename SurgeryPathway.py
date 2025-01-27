@@ -610,7 +610,6 @@ Number of active entities remaining was {self.active_entities}""")
 
         self.queue_times_df = pd.concat([self.queue_times_df, df_to_add])
 
-    # A method to save the wait times from this run to a csv file
     def write_queue_times(self):
         """
         A method to save the wait times from this run to a csv file
@@ -618,6 +617,8 @@ Number of active entities remaining was {self.active_entities}""")
         # Preview the dataframe in the console
         print(self.queue_times_df.head())
 
+        # Write the entire dataframe to a csv file
+        self.queue_times_df.to_csv(f'wait_times_run_{self.run_number}.csv', index=False)
 
     # A method to write the queue numbers to a csv file
     def write_queue_numbers(self):
