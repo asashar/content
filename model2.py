@@ -358,4 +358,4 @@ with tab2:
     st.markdown('This is the very basic pathway used for the model.')
     st.markdown('This assumes patients are seen at clinic and added to an inpatient waiting list.')
 
-    image = Image.open('pathway_diagram.jpg')
+    image = st.image('pathway_diagram.jpg')
