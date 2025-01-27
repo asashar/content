@@ -511,50 +511,50 @@ class Neurosurgery_Pathway:
                  }
             )
 
-    def clinic_unavail(self):
-        """
-        Method to model interval between clinic appointments
+    # SR NOTE 17/1: Have commented these out for now as taken a slightly different approach to
+    # getting the simulation putting the correct number of people through the clinics per week
+    # def clinic_unavail(self):
+    #     """
+    #     Method to model interval between clinic appointments
 
-        Sends in a high priority resource that will hog the clinic until
-        the next case should be sent in (modelling unavailability e.g. overnight
-        or otherwise)
-        """
+    #     Sends in a high priority resource that will hog the clinic until
+    #     the next case should be sent in (modelling unavailability e.g. overnight
+    #     or otherwise)
+    #     """
 
-        while True:
+    #     while True:
 
-            # Freeze clinic_unavail function for duration of clinic
-            yield self.env.timeout(1)
+    #         # Freeze clinic_unavail function for duration of clinic
+    #         yield self.env.timeout(1)
 
-            # Request clinic with max priority and hold until next clinic
-            with self.surg_clinic.request(priority=-1) as req:
-                # Freeze the function until the request can be met (this
-                # ensures that the last patient in clinic will be seen)
-                yield req
+    #         # Request clinic with max priority and hold until next clinic
+    #         with self.surg_clinic.request(priority=-1) as req:
+    #             # Freeze the function until the request can be met (this
+    #             # ensures that the last patient in clinic will be seen)
+    #             yield req
 
-                yield self.env.timeout(self.surg_clinic_interval)
+    #             yield self.env.timeout(self.surg_clinic_interval)
 
+    # def theatres_unavail(self):
+    #     """
+    #     Method to model interval between theatre lists
 
-     # method to model interval between theatre lists
-    def theatres_unavail(self):
-        """
-        Method to model interval between theatre lists
+    #     Sends in a high priority resource that will hog the theatre until
+    #     the next case should be sent in (modelling unavailability e.g. overnight
+    #     or otherwise)
+    #     """
+    #     while True:
 
-        Sends in a high priority resource that will hog the theatre until
-        the next case should be sent in (modelling unavailability e.g. overnight
-        or otherwise)
-        """
-        while True:
+    #         # Freeze theatres_unavail function for duration of list
+    #         yield self.env.timeout(1)
 
-            # Freeze theatres_unavail function for duration of list
-            yield self.env.timeout(1)
+    #         # Request resource with max priority and hold until next list
+    #         with self.theatres.request(priority=-1) as req:
+    #             # Freeze the function until the request can be met (this
+    #             # ensures that the last theatre case will be completed)
+    #             yield req
 
-            # Request resource with max priority and hold until next list
-            with self.theatres.request(priority=-1) as req:
-                # Freeze the function until the request can be met (this
-                # ensures that the last theatre case will be completed)
-                yield req
-                
-                yield self.env.timeout(self.theatre_list_interval)
+    #             yield self.env.timeout(self.theatre_list_interval)
 
     def monitor(self):
         """
