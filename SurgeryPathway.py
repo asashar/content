@@ -402,8 +402,10 @@ class Neurosurgery_Pathway:
 
                 # record end of queue time and add to tracker
                 end_q_clinic = self.env.now
-                # self.fill_non_admitted_queue -= 1 # SR 16/1 have commented out as think incorrect attribute
-                self.clinic_queue_length -= 1
+
+                if self.env.now <= self.sim_duration:
+                    # self.fill_non_admitted_queue -= 1 # SR 16/1 have commented out as think incorrect attribute
+                    self.clinic_queue_length -= 1
 
                 # record total queue time
                 # patient.clinic_q_time = end_q_clinic - start_q_clinic # SR this was incorrectly _q_ instead of _queue_
