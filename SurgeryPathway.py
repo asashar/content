@@ -78,6 +78,11 @@ class Neurosurgery_Pathway:
 
         #setup environment
         self.env = simpy.Environment()
+        #create 'end of simulation' Event
+        self.end_of_sim = self.env.event()
+        self.run_number = run_number
+        self.sim_duration = sim_duration
+
         self.active_entities = 0
         self.patient_counter = 0
 
@@ -85,42 +90,79 @@ class Neurosurgery_Pathway:
         self.event_log = []
 
         #setup values from defaults and calculate
-        self.referrals_per_week = referrals_per_week
-        # Calculate the average inter-arrival time between referrals
-        self.referral_interval = 1 / referrals_per_week
-        self.theatre_list_per_week = theatre_list_per_week
-        self.theatre_list_capacity = theatre_list_capacity
 
-        # calculate total extra patients added on to trauma lists per week
-        self.weekly_extra_patients = weekly_extra_patients * trauma_list_per_week
+        # ------------------ #
+        # Existing Referrals #
+        # ------------------ #
 
-        # calculate equivalent extra patients per non trauma list
-        self.extra_patients_adjusted = self.weekly_extra_patients / theatre_list_per_week
-
-        # calculate new theatre list capacity
-        self.adjusted_theatre_capacity = theatre_list_capacity + self.extra_patients_adjusted
-
-        self.surg_clinic_duration = 1 / surg_clinic_attendances
-        self.surg_clinic_interval = 7 / surg_clinic_per_week
-
-
-        # here use adjusted theatre capacity
-        self.theatre_case_duration = 1 / self.adjusted_theatre_capacity
-        self.theatre_list_interval = 7 / theatre_list_per_week
-
-        # The probability that a patient, after going to the clinic, will progress to the
-        # step of having surgery
-        self.prob_needs_surgery = prob_needs_surgery
-
-        self.sim_duration = sim_duration
-
+        # The number of people who are already queueing before the simulation starts
+        # These are the people who have **NOT** had their clinic appointment and also have not had their surgical appointment
         self.fill_non_admitted_queue = fill_non_admitted_queue
+        # These are the people who have had their clinic appointment, but not their surgical appointment
+        # (but are definitely going on to surgery)
         self.fill_admitted_queue = fill_admitted_queue
 
         self.total_fill_queues = fill_non_admitted_queue + fill_admitted_queue
 
-        #create 'end of simulation' Event
-        self.end_of_sim = self.env.event()
+        # ---------------- #
+        # New Referrals    #
+        # ---------------- #
+
+        self.referrals_per_week = referrals_per_week
+        # Calculate the average inter-arrival time between referrals
+        self.referral_interval = 1 / referrals_per_week
+
+        # ---------------- #
+        # Surgical Clinic  #
+        # ---------------- #
+
+
+        self.surg_clinic_capacity = surg_clinic_capacity
+        self.surg_clinic_per_week = surg_clinic_per_week
+        self.surg_clinic_total_slots = self.surg_clinic_capacity * self.surg_clinic_per_week
+
+        self.surg_clinic_duration = 1 / self.surg_clinic_total_slots
+        # self.surg_clinic_interval = 1 / surg_clinic_per_week
+
+        # ---------------- #
+        # Theatre          #
+        # ---------------- #
+        self.theatre_list_per_week = theatre_list_per_week
+        self.theatre_list_capacity = theatre_list_capacity
+        self.theatre_total_slots = self.theatre_list_per_week * self.theatre_list_capacity
+
+        # calculate total extra patients added on to trauma lists per week
+        # TODO: SR NOTE: Not sure I fully understand this one
+        self.weekly_extra_patients = weekly_extra_patients * trauma_list_per_week
+
+        # calculate equivalent extra patients per non trauma list
+        # SR NOTE: Are these patients ones who exist in the model?
+        # If not, we may want to count them in some way in the results, but I wonder
+        # if they actually need to be excluded
+
+        # TODO: REINCORPORATE THIS! Temporarily commented out to get core theatre slots working
+        # self.extra_patients_adjusted = self.weekly_extra_patients / theatre_list_per_week
+
+        # TODO: REINCORPORATE THIS! Temporarily commented out to get core theatre slots working
+        # calculate new theatre list capacity
+        # self.adjusted_theatre_capacity = theatre_list_capacity + self.extra_patients_adjusted
+        # SR NOTE: assume these patients are actually taking away from the planned capacity?
+        # self.adjusted_theatre_capacity = theatre_list_capacity - self.extra_patients_adjusted
+
+        # TODO: REINCORPORATE THIS! Temporarily commented out to get core theatre slots working
+        # here use adjusted theatre capacity
+        # self.theatre_case_duration = 1 / self.adjusted_theatre_capacity
+
+
+        self.theatre_case_duration = 1 / self.theatre_total_slots
+        # this is used for determining the gap between theatre cases in the model
+        # TODO: Does this need adjusting to take away theatre_case_duration? At moment
+        # feels like it might effectively be double counting
+        # self.theatre_list_interval = 1 / theatre_list_per_week
+
+        # The probability that a patient, after going to the clinic, will progress to the
+        # step of having surgery
+        self.prob_needs_surgery = prob_needs_surgery
 
         #setup resources
 
@@ -130,8 +172,6 @@ class Neurosurgery_Pathway:
         # priority can come in to model the unavailability of the clinic and theatre
         self.surg_clinic = simpy.PriorityResource(self.env, capacity=1)
         self.theatres = simpy.PriorityResource(self.env, capacity=1)
-
-        self.run_number = run_number
 
         #variables to keep track of numbers in queues
         # SR NOTE 18/1/25: These were originally named
