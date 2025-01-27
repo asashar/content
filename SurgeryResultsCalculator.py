@@ -36,15 +36,19 @@ class Trial_Results_Calculator:
 
         # create empty dataframe
         nodata = {'time_entered_pathway': [],
-                    'overall_q_time': []}
+                    'overall_queue_time': [],
+                    'run': []}
         all_wait_times_df = pd.DataFrame(nodata)
 
         for i in range(self.number_of_runs):
             wait_times_this_run = pd.read_csv(f'wait_times_run_{i}.csv')
+             # Add column indicating the run these wait times come from
+            wait_times_this_run['run'] = i+1
             all_wait_times_df = pd.concat([all_wait_times_df, wait_times_this_run])
 
         # save to csv
         # print(all_wait_times_df.head())
+        all_wait_times_df['run'] = all_wait_times_df['run'].astype('int')
         all_wait_times_df.to_csv('all_wait_times.csv')
 
         # delete individual run files
@@ -56,13 +60,16 @@ class Trial_Results_Calculator:
         A method to read in the run results csv file and print them for the user
         """
         trial_results_df = pd.read_csv('all_wait_times.csv')
+        trial_results_df['run'] = trial_results_df['run'].astype('str')
 
         fig = px.scatter(trial_results_df, x='time_entered_pathway',
-                            y='overall_q_time', opacity=0.6, trendline='ols',
-                            trendline_color_override='red',
+                            y='overall_queue_time', opacity=0.3, trendline='ols',
+                            trendline_color_override='black',
+                            trendline_scope = 'overall',
+                            color="run",
                             title='Total wait time vs time of referral',
                             labels={'time_entered_pathway': 'Week of referral',
-                                    'overall_q_time': 'Total wait time'})
+                                    'overall_queue_time': 'Total wait time (weeks)'})
         return fig
 
     def calculate_mean_queue_numbers(self):
@@ -122,7 +129,7 @@ class Trial_Results_Calculator:
 
         This will also look at patients who are prefills.
 
-        # TODO: Consider whether the fact that prefills don't have a prior waiting time is
+        # TODO: SR NOTE: Consider whether the fact that prefills don't have a prior waiting time is
         # artificially reducing this figure
 
         """
@@ -131,7 +138,7 @@ class Trial_Results_Calculator:
         trial_results_df = pd.read_csv('all_wait_times.csv')
 
         #return average wait time for patients who entered pathway on day 0
-        return trial_results_df[trial_results_df['time_entered_pathway'] < 1]['overall_q_time'].mean()
+        return trial_results_df[trial_results_df['time_entered_pathway'] < 1]['overall_queue_time'].mean()
 
     def readout_wait_time_end(self):
         """
@@ -150,7 +157,7 @@ class Trial_Results_Calculator:
 
         # return average wait time for patients who entered pathway on final day of simulation
         last_day = self.sim_duration - 1
-        return trial_results_df[trial_results_df['time_entered_pathway'] > last_day]['overall_q_time'].mean()
+        return trial_results_df[trial_results_df['time_entered_pathway'] > last_day]['overall_queue_time'].mean()
 
 
     def readout_total_52_plus(self):
