@@ -438,8 +438,10 @@ class Neurosurgery_Pathway:
                  'surgery_required': patient.needs_surgery
                  }
             )
-        #self.fill_admitted_queue += 1 # SR 16/1 have commented out as think incorrect attribute
-        self.theatre_queue_length += 1
+
+        if self.env.now <= self.sim_duration:
+            #self.fill_admitted_queue += 1 # SR 16/1 have commented out as think incorrect attribute
+            self.theatre_queue_length += 1
 
         # Request theatres resource
         with self.theatres.request() as req:
@@ -456,8 +458,10 @@ class Neurosurgery_Pathway:
 
             # Record end of queue time and add to tracker
             end_q_theatres = self.env.now
-            #self.fill_admitted_queue -= 1 # SR 16/1 have commented out as think incorrect attribute
-            self.theatre_queue_length -= 1
+
+            if self.env.now <= self.sim_duration:
+                #self.fill_admitted_queue -= 1 # SR 16/1 have commented out as think incorrect attribute
+                self.theatre_queue_length -= 1
 
             # Record theatre queue time and overall queue time
             # TODO: SR NOTE: For consistency with later results recording, should this also check
