@@ -1,0 +1,9 @@
+simpy
+pyttsx3
+numpy
+pandas
+matplotlib
+streamlit
+plotly
+statsmodels
+ipykernel
